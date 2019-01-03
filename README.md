@@ -62,3 +62,15 @@ Files will be available in the "dump/" directory.
 ```bash
 ./scripts/dumpData.js
 ```
+
+**Creating Data Files**
+
+This can be used to replace the ".0" archive files.
+"SNDS.0" is used as an example.
+Make sure you back up any data files which you replace.
+
+```bash
+./scripts/makeDataFile.js ./bin/SNDS.0 path/to/sound1.voc path/to/sound2.voc ...etc
+```
+
+The final file should have the same number of sounds as the original.

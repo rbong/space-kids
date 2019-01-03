@@ -37,6 +37,34 @@ function shiftU64(data) {
   return Buffer.from(shiftBytes(data, 8, true), 'hex').readUInt32LE();
 }
 
+function toUInt(value, bytes = 1) {
+  const be = Number(value).toString(16).padStart(bytes, '0').split('');
+  if (be.length > bytes) {
+    throw new Error('UInt out of range');
+  }
+  let le = '';
+  while (be.length) {
+    le = be.splice(0, 2).join('') + le;
+  }
+  return le;
+}
+
+function toU16(value) {
+  return toUInt(value, 2);
+}
+
+function toU32(value) {
+  return toUInt(value, 4);
+}
+
+function toU48(value) {
+  return toUInt(value, 6);
+}
+
+function toU64(value) {
+  return toUInt(value, 8);
+}
+
 function splitDataFile(file, getName) {
   console.log('splitting', file);
   const originalData = readDataFile(file);
@@ -63,6 +91,30 @@ function splitDataFile(file, getName) {
   return nFiles;
 }
 
+function makeDataFile(output, files) {
+  const headerSize = files.length * 4;
+
+  let fat = toU32(headerSize);
+  let fileOffset = headerSize + 2;
+  let fileData = '';
+  files.forEach((file) => {
+    console.info('packing', file);
+    // Last two bytes of each file entry are unknown
+    fat += toU48(fileOffset) + '00';
+    const data = fs.readFileSync(file, 'hex');
+    const size = data.length / 2;
+
+    fileData += toU32(size);
+    fileData += data;
+    fileOffset += 2 + size;
+    console.log('read', size, 'bytes');
+  });
+
+  console.info('writing data file', output);
+
+  return fs.writeFileSync(output, fat + fileData, 'hex');
+}
+
 function sh(cmd) {
   return childProcess.execSync(cmd, { stdio: 'inherit' });
 }
@@ -80,7 +132,13 @@ module.exports = {
   shiftU32,
   shiftU48,
   shiftU64,
+  toUInt,
+  toU16,
+  toU32,
+  toU48,
+  toU64,
   splitDataFile,
+  makeDataFile,
   sh,
   mkdir
 };
